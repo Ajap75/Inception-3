@@ -5,36 +5,30 @@
 
 # 1. Base de l'image : Debian "bookworm"
 FROM debian:bookworm
-# Pourquoi ? Debian est léger, stable, maintenu à long terme, et autorisé par le sujet.
 
-# 2. Installation de PHP (version FPM pour serveur), de l'extension MySQL et de curl
-RUN apt-get update && apt-get install -y php-fpm php-mysql curl mariadb-client default-mysql-client
-# - php-fpm : moteur PHP pour servir les requêtes dynamiquement
-# - php-mysql : module permettant à PHP de parler à MariaDB/MySQL
-# - curl : utilitaire pour télécharger WP-CLI
+# 2. Installation de PHP-FPM, des dépendances MySQL, et curl pour wp-cli
+RUN apt-get update && apt-get install -y \
+    php-fpm php-mysql \
+    mariadb-client default-mysql-client \
+    curl \
+    && apt-get clean
 
-# 3. Installation de WP-CLI (outil en ligne de commande pour piloter WordPress)
+# 3. Installation de WP-CLI
 RUN curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
     && chmod +x /usr/local/bin/wp
-# - Télécharge l'outil wp-cli officiel (format .phar)
-# - Place le binaire dans /usr/local/bin (chemin classique pour les exécutables système)
-# - Donne les droits d'exécution
 
-# 4. Prépare le dossier d'accueil de WordPress
+# 4. Préparation du dossier WordPress (point de montage / persistance)
 RUN mkdir -p /var/www/wordpress
-# - Ce sera le "volume" partagé avec NGINX et la VM pour la persistance
 
-# 5. Ajoute le script d'installation/configuration WordPress dans l'image
+# 5. Ajout du fichier www.conf modifié pour utiliser le port 9000 (au lieu d’un socket)
+COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
+
+# 6. Ajout du script d’installation WordPress
 COPY conf/setup.sh /tmp/setup.sh
 RUN chmod +x /tmp/setup.sh
-# - On copie le script qui va : attendre MariaDB, installer WordPress, créer les users...
-# - On lui donne le droit d'exécution pour qu'il puisse être lancé comme programme principal
 
-# 6. Ouvre le port 9000 (utilisé par PHP-FPM pour communiquer avec NGINX)
+# 7. Exposition du port PHP-FPM
 EXPOSE 9000
-# - Permet à NGINX de passer les requêtes PHP au service WordPress
 
-# 7. Point d'entrée : on lance le script setup.sh
+# 8. Lancement du script de setup comme commande principale
 CMD ["/tmp/setup.sh"]
-# - Quand le conteneur démarre, il exécute setup.sh
-#   - Ce script va attendre la BDD, installer WordPress si besoin, créer admin/user, puis lancer PHP-FPM au premier plan (foreground)
