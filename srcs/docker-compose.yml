@@ -21,11 +21,9 @@ services:
       - "443:443"                      # Expose le port 443 du conteneur (HTTPS) vers le port 443 de l’hôte
 
     volumes:
-      - wordpress:/var/www/wordpress:ro  # Monte le volume WordPress en lecture seule dans le conteneur NGINX
-                                         # Permet à NGINX de servir les fichiers WP sans pouvoir les modifier
+      - /home/anastruc/data/wordpress:/var/www/wordpress:ro    # Bind-mount explicite : NGINX sert les fichiers WP en lecture seule
       - ./requirements/nginx/conf/nginx.conf:/etc/nginx/conf.d/default.conf:ro
                                          # Monte le fichier de configuration NGINX personnalisé depuis l'hôte (en lecture seule)
-                                         # Alternative : possibilite de COPY le fichier dans l'image au build
 
     networks:
       - inception_network               # Place NGINX sur le même réseau Docker que les autres services
@@ -43,10 +41,10 @@ services:
     container_name: inception-wordpress
 
     volumes:
-      - wordpress:/var/www/wordpress      # Volume partagé avec NGINX, ici en lecture-écriture (WP peut écrire/éditer)
-    
+      - /home/anastruc/data/wordpress:/var/www/wordpress    # Bind-mount en lecture-écriture pour WordPress
+
     environment:
-      - DOMAIN_NAME=${DOMAIN_NAME}        # Variables d'environnement injectées (récupérées du .env)
+      - DOMAIN_NAME=${DOMAIN_NAME}
       - MYSQL_HOST=${MYSQL_HOST}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
@@ -71,7 +69,6 @@ services:
   ##################
   mariadb:
     build:
-    
       context: ./requirements/mariadb
       args:
         MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -81,37 +78,16 @@ services:
     container_name: inception-mariadb
 
     volumes:
-      - mariadb:/var/lib/mysql            # Volume persistant pour stocker les données SQL (bases, tables, users…)
+      - /home/anastruc/data/mariadb:/var/lib/mysql      # Bind-mount explicite pour MariaDB
 
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}  # Mot de passe root MariaDB (injecté via .env)
-      - MYSQL_DATABASE=${MYSQL_DATABASE}            # Nom de la base à créer automatiquement
-      - MYSQL_USER=${MYSQL_USER}                    # Nom de l'utilisateur WP à créer
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}            # Mot de passe de l'utilisateur WP
-      
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
 
     networks:
       - inception_network
-
-######################
-# VOLUMES DOCKER PERSISTANTS
-######################
-
-volumes:
-  wordpress:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /home/anastruc/data/wordpress
-      # Chemin sur la VM où les données du site WordPress sont stockées et persistent après reboot
-
-  mariadb:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /home/anastruc/data/mariadb     # Chemin sur la VM pour la base MariaDB
 
 ######################
 # RÉSEAU DOCKER COMMUN

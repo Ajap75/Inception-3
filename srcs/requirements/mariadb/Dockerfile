@@ -31,12 +31,17 @@ RUN chmod +x /init_db.sh
 # --------------------------
 # USER mysql à partir d'ici (optionnel, tu peux le laisser si tu veux, mais pas obligatoire car ENTRYPOINT le lancera en root puis passera en USER mysql si tu fais exec mysqld)
 # --------------------------
-# USER mysql
+
+RUN find /var/lib/mysql -type f -exec chmod 660 {} \; && \
+    find /var/lib/mysql -type d -exec chmod 770 {} \; && \
+    chown -R mysql:mysql /var/lib/mysql
+
+USER mysql
 
 VOLUME /var/lib/mysql
 EXPOSE 3306
 
 # --------------------------
 # Lancement du script d'init au démarrage (et seulement au démarrage du conteneur)
-# --------------------------
+# -------------------------
 ENTRYPOINT ["/init_db.sh"]
