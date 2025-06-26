@@ -8,7 +8,7 @@ FROM debian:bookworm
 # Pourquoi ? Debian est léger, stable, maintenu à long terme, et autorisé par le sujet.
 
 # 2. Installation de PHP (version FPM pour serveur), de l'extension MySQL et de curl
-RUN apt-get update && apt-get install -y php-fpm php-mysql curl mariadb-client
+RUN apt-get update && apt-get install -y php-fpm php-mysql curl mariadb-client default-mysql-client
 # - php-fpm : moteur PHP pour servir les requêtes dynamiquement
 # - php-mysql : module permettant à PHP de parler à MariaDB/MySQL
 # - curl : utilitaire pour télécharger WP-CLI
