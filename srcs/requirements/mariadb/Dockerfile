@@ -27,4 +27,4 @@ EXPOSE 3306
 VOLUME /var/lib/mysql
 
 # 🧠 Important : forcer bash comme shell d’exécution
-ENTRYPOINT ["bash", "/init_db.sh"]
+ENTRYPOINT ["/init_db.sh"]
